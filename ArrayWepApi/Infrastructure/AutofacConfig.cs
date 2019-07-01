@@ -18,10 +18,6 @@ namespace ArrayWepApi.Infrastructure
             // получаем экземпляр контейнера
             var builder = new ContainerBuilder();
 
-            //var config = GlobalConfiguration.Configuration;
-            //builder.RegisterWebApiFilterProvider(config);
-            //builder.RegisterWebApiModelBinderProvider();
-
             // регистрируем контроллер в текущей сборке
             builder.RegisterApiControllers(Assembly.GetExecutingAssembly());
 
