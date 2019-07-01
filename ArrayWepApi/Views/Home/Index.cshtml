@@ -1,0 +1,148 @@
+﻿@using ArrayWepApi.Models
+@model CustomArray
+
+
+@{
+    ViewBag.Title = "Тест";
+}
+
+@section Scripts {
+    <style>
+        table td{
+            padding: 20px;
+            border: 1px solid black;
+        }
+    </style>
+    
+    <script>
+        var model = {
+            array: ko.observableArray()
+        };
+
+        function getValues(callback) {
+            $.ajax({
+                type: "GET",
+                url: "/api/values",
+                success: callback
+            });
+        }
+
+        function rotateValues(callback) {
+            $.ajax({
+                type: "POST",
+                data: JSON.stringify(model.array),
+                url: "/api/values/rotate",
+                contentType: "application/json",
+                success: callback
+            });
+        }
+
+        function createFile(callback) {
+            $.ajax({
+                type: "POST",
+                data: JSON.stringify(model.array),
+                url: "/api/values/Export",
+                contentType: "application/json",
+                success: callback
+            });
+        }
+
+        function getArray() {
+            getValues(function (data) {
+                model.array = data;
+                create();
+                updateTable();
+            });
+        }
+
+        function rotateArray() {
+            rotateValues(function (data) {
+                model.array = data;
+                create();
+                updateTable();
+            });
+        }
+
+        function create() {
+            createFile(function (data) {
+                var dlbtn = document.getElementById("hrefFile");
+                var file = new Blob([data], { type: "text/csv" });
+                dlbtn.href = URL.createObjectURL(file);
+                dlbtn.download = "file.csv";
+            });
+        }
+
+        function updateTable() {
+            var table = document.querySelector("#table");
+            table.innerHTML = "";
+            var arr = model.array.Value;
+            for (var i = 0; i < arr.length; i++) {
+                var tr = document.createElement("tr");
+                for (var j = 0; j < arr[i].length; j++) {
+                    var td = document.createElement("td");
+                    td.innerHTML = arr[i][j];
+                    tr.appendChild(td);
+                }
+                table.appendChild(tr);
+            }
+        }
+
+        $(document).ready(function () {
+            ko.applyBindings(model);
+            $("#getArray").click(getArray);
+            $("#rotateArray").click(rotateArray);
+            $('#submit').on('click', function (e) {
+                e.preventDefault();
+                var files = document.getElementById('uploadFile').files;
+                if (files.length > 0) {
+                    if (window.FormData !== undefined) {
+                        var data = new FormData();
+                        for (var x = 0; x < files.length; x++) {
+                            data.append("file" + x, files[x]);
+                        }
+
+                        $.ajax({
+                            type: "POST",
+                            url: "/api/values/Import",
+                            contentType: false,
+                            processData: false,
+                            data: data,
+                            success: function (data) {
+                                model.array = data;
+                                create();
+                                updateTable();
+                            },
+                            error: function (xhr, status, p3) {
+                                alert(status);
+                            }
+                        });
+                    } else {
+                        alert("error");
+                    }
+                }
+            });
+        });
+    </script>
+
+}
+@section Body {
+    <div id="summary" class="section panel panel-primary">
+        <button id="getArray" class="btn btn-xs btn-primary">
+            Сгенерировать
+        </button>
+        <button id="rotateArray" class="btn btn-xs btn-primary">
+            Перевернуть
+        </button>
+        <a href="javascript:void(0)" id="hrefFile" class="btn btn-xs btn-primary">
+            Скачать
+        </a>
+    </div>
+    <div>
+       <table id="table">
+       </table>
+    </div>
+    <div>
+        <input type="file" name="upload" id="uploadFile" class="btn-sm btn-secondary" /><br />
+        <button id="submit" class="btn btn-xs btn-primary">Загрузить</button>
+    </div>
+}
